@@ -1,0 +1,50 @@
+#include <Wire.h>
+#include <MPU6050.h>
+
+const int sensorPin = A0;  // connect the sensor to analog pin A0
+const int flexPin = A3;
+
+float temperature;
+int flex;
+
+MPU6050 mpu;
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+  mpu.initialize();
+  mpu.setAccelerometerRange(MPU6050_ACCEL_FS_2);
+  mpu.setGyroRange(MPU6050_GYRO_FS_250);
+}
+
+void loop() {
+  int sensorValue = analogRead(sensorPin); // convert the sensor value to temperature in Celsius
+  temperature = (sensorValue * 5.0 / 1023.0) * 100.0;
+  delay(1000); 
+  flex = analogRead(flexPin); 
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  int tiltDirection = getTiltDirection(gx, gy, gz);
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C ");
+  Serial.println(flex);
+  Serial.print("Tilt direction: ");
+  Serial.println(tiltDirection);
+  delay(1000); // wait for a second before reading the sensor again
+}
+
+int getTiltDirection(int gx, int gy, int gz) {
+  int tiltDirection;
+  if (gx > 1000) { // tilting towards right
+    tiltDirection = 0;
+  } else if (gx < -1000) { // tilting towards left
+    tiltDirection = 1;
+  } else if (gy > 1000) { // tilting forward
+    tiltDirection = 2;
+  } else if (gy < -1000) { // tilting backward
+    tiltDirection = 3;
+  } else { // no tilt
+    tiltDirection = -1;
+  }
+  return tiltDirection;
+}
